@@ -451,11 +451,19 @@
   function openDetail(r) {
     const modal = el('modal');
     const citation = r.reference ? r.reference + (r.doi ? ' https://doi.org/' + r.doi : '') : 'Not available';
+    const reportedDiffers = r.plant_name_original &&
+      r.plant_name_original.trim().toLowerCase() !== (r.accepted_species || '').trim().toLowerCase();
     modal.innerHTML = `
       <button class="modal-close" id="modalClose">&times;</button>
-      <h2>${fmt(r.accepted_taxon || r.plant_name_original)}</h2>
+      <h2>${fmt(r.accepted_taxon || r.accepted_species || r.plant_name_original)}</h2>
       <p class="local-name">${fmt(r.local_name)} · ${fmt(r.family)} ${fmt(r.genus)}</p>
       <dl class="field-grid">
+        <dt>Accepted name</dt><dd>${fmt(r.accepted_species)}</dd>
+        <dt>Accepted taxon</dt><dd>${fmt(r.accepted_taxon)}</dd>
+        <dt>Reported as</dt><dd>${fmt(r.plant_name_original)}${reportedDiffers ? ' <span class="tag">resolved synonym</span>' : ''}</dd>
+        <dt>Local name</dt><dd>${fmt(r.local_name)}</dd>
+        <dt>Family</dt><dd>${fmt(r.family)}</dd>
+        <dt>Genus</dt><dd>${fmt(r.genus)}</dd>
         <dt>Use type</dt><dd>${fmt(r.use_type)}</dd>
         <dt>Part used</dt><dd>${fmt(r.used_part)}</dd>
         <dt>Preparation</dt><dd>${fmt(r.preparation_method)}</dd>
@@ -466,6 +474,7 @@
         <dt>Location</dt><dd>${[r.village, r.district, r.province, r.region].filter(Boolean).join(', ') || '—'}</dd>
         <dt>Study year</dt><dd>${fmt(r.study_year)}</dd>
         <dt>Record ID</dt><dd>${fmt(r.record_id)}</dd>
+        ${r.nonplant_flag ? `<dt>Note</dt><dd>${fmt(r.nonplant_flag)}</dd>` : ''}
       </dl>
       <div class="citation">${citation}</div>
     `;
