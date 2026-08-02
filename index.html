@@ -185,15 +185,6 @@
   tbody tr:hover { background: var(--brand-light); }
   td.taxon { font-style: italic; }
   td.muted, .muted { color: var(--muted); }
-  .tag {
-    display: inline-block;
-    background: var(--brand-light);
-    color: var(--brand-dark);
-    border-radius: 999px;
-    padding: 2px 9px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-  }
 
   /* Pagination */
   .pagination {
@@ -451,8 +442,6 @@
   function openDetail(r) {
     const modal = el('modal');
     const citation = r.reference ? r.reference + (r.doi ? ' https://doi.org/' + r.doi : '') : 'Not available';
-    const reportedDiffers = r.plant_name_original &&
-      r.plant_name_original.trim().toLowerCase() !== (r.accepted_species || '').trim().toLowerCase();
     modal.innerHTML = `
       <button class="modal-close" id="modalClose">&times;</button>
       <h2>${fmt(r.accepted_taxon || r.accepted_species || r.plant_name_original)}</h2>
@@ -460,7 +449,7 @@
       <dl class="field-grid">
         <dt>Accepted name</dt><dd>${fmt(r.accepted_species)}</dd>
         <dt>Accepted taxon</dt><dd>${fmt(r.accepted_taxon)}</dd>
-        <dt>Reported as</dt><dd>${fmt(r.plant_name_original)}${reportedDiffers ? ' <span class="tag">resolved synonym</span>' : ''}</dd>
+        <dt>Reported as</dt><dd>${fmt(r.plant_name_original)}</dd>
         <dt>Local name</dt><dd>${fmt(r.local_name)}</dd>
         <dt>Family</dt><dd>${fmt(r.family)}</dd>
         <dt>Genus</dt><dd>${fmt(r.genus)}</dd>
