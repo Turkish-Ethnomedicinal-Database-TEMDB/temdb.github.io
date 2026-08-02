@@ -373,6 +373,22 @@
     return [...new Set(rows.map(r => r[key]).filter(Boolean))].sort();
   }
 
+  // Some records belong to more than one ICD-11 chapter; these are stored as a
+  // single comma-joined string (e.g. "05 - Endocrine..., 13 - Diseases of the
+  // digestive system"). Split on a comma only when followed by a chapter code
+  // (two digits + " - ") so internal commas in a chapter's own name (e.g.
+  // "Endocrine, nutritional or metabolic diseases") are left intact.
+  function splitIcdChapters(value) {
+    if (!value) return [];
+    return value.split(/,\s*(?=\d{2}\s*-\s*)/).map(s => s.trim()).filter(Boolean);
+  }
+
+  function uniqueIcdChapters(rows) {
+    const set = new Set();
+    rows.forEach(r => splitIcdChapters(r.icd11_level1).forEach(v => set.add(v)));
+    return [...set].sort();
+  }
+
   function applyFilters() {
     const q = el('search').value.trim().toLowerCase();
     const family = el('f-family').value;
@@ -385,7 +401,7 @@
       if (family && r.family !== family) return false;
       if (region && r.region !== region) return false;
       if (useType && r.use_type !== useType) return false;
-      if (icd && r.icd11_level1 !== icd) return false;
+      if (icd && !splitIcdChapters(r.icd11_level1).includes(icd)) return false;
       if (year && String(r.study_year) !== year) return false;
       if (q) {
         const hay = (
@@ -503,7 +519,7 @@
       populateSelect(el('f-family'), uniqueSorted(state.rows, 'family'));
       populateSelect(el('f-region'), uniqueSorted(state.rows, 'region'));
       populateSelect(el('f-usetype'), uniqueSorted(state.rows, 'use_type'));
-      populateSelect(el('f-icd'), uniqueSorted(state.rows, 'icd11_level1'));
+      populateSelect(el('f-icd'), uniqueIcdChapters(state.rows));
       populateSelect(el('f-year'), uniqueSorted(state.rows, 'study_year').map(String));
 
       el('loading').style.display = 'none';
