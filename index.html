@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEMDB — Türk Etnotıbbi Veritabanı</title>
+<style>
+  :root {
+    --brand: #2f6b3a;
+    --brand-dark: #1f4b28;
+    --bg: #f7f8f4;
+    --text: #1b1f1a;
+    --muted: #5a635a;
+    --border: #dfe3db;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  header h1 {
+    font-size: 1.15rem;
+    margin: 0;
+    font-weight: 600;
+  }
+  header p {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    opacity: 0.9;
+  }
+  header a.newtab {
+    color: white;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  header a.newtab:hover { background: rgba(255,255,255,0.28); }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #status {
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: white;
+  }
+  iframe {
+    flex: 1;
+    border: none;
+    width: 100%;
+  }
+  footer {
+    padding: 8px 20px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: white;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  footer a { color: var(--brand-dark); }
+  .fallback {
+    padding: 24px;
+    max-width: 640px;
+    margin: 40px auto;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>TEMDB — Türk Etnotıbbi Veritabanı</h1>
+    <p>5.071 kullanım kaydı · 1.002 bitki taksonu · 60 kaynak çalışma · 2017–2021</p>
+  </div>
+  <a class="newtab" id="open-new-tab" href="#" target="_blank" rel="noopener">Yeni sekmede aç ↗</a>
+</header>
+
+<main>
+  <div id="status">Veritabanı yükleniyor… (ilk açılışta birkaç saniye sürebilir)</div>
+  <iframe id="datasette-frame" title="TEMDB Datasette"></iframe>
+</main>
+
+<footer>
+  Bu arayüz <a href="https://lite.datasette.io/" target="_blank" rel="noopener">Datasette Lite</a> ile tarayıcı içinde (sunucu olmadan) çalışır.
+  Veri seti: TEMDB v1.0 · CC BY 4.0 · <a href="https://doi.org/10.5281/zenodo.20002971" target="_blank" rel="noopener">Zenodo DOI</a>
+</footer>
+
+<script>
+(function () {
+  const statusEl = document.getElementById('status');
+  const frame = document.getElementById('datasette-frame');
+  const newTabLink = document.getElementById('open-new-tab');
+
+  // GitHub Pages (and any local dev server) serves temdb.db with
+  // access-control-allow-origin: *, so Datasette Lite can fetch it directly
+  // from right next to this page, regardless of hostname or branch name.
+  const dbUrl = new URL('temdb.db', location.href).href;
+
+  const datasetteUrl = 'https://lite.datasette.io/?url=' + encodeURIComponent(dbUrl) + '#/temdb/use_reports';
+  newTabLink.href = datasetteUrl;
+  frame.src = datasetteUrl;
+
+  frame.addEventListener('load', function () {
+    statusEl.textContent = 'Veritabanı hazır. Arama kutusunu veya sütun filtrelerini kullanarak kayıtları filtreleyebilirsiniz.';
+  });
+
+  setTimeout(function () {
+    if (statusEl.textContent.indexOf('yükleniyor') !== -1) {
+      statusEl.innerHTML = 'Yükleme uzun sürüyorsa <a href="' + datasetteUrl + '" target="_blank" rel="noopener">buraya tıklayıp yeni sekmede açabilirsiniz</a>.';
+    }
+  }, 6000);
+})();
+</script>
+
+</body>
+</html>
