@@ -1,19 +1,38 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TEMDB — Türk Etnotıbbi Veritabanı</title>
+<title>TEMDB — Turkish Ethnomedicinal Database</title>
+<meta name="description" content="Browse 5,071 medicinal plant use-reports from 60 ethnobotanical studies conducted in Türkiye (2017–2021).">
 <style>
   :root {
     --brand: #2f6b3a;
     --brand-dark: #1f4b28;
-    --bg: #f7f8f4;
+    --brand-light: #eaf3ea;
+    --bg: #f8f9f6;
+    --surface: #ffffff;
     --text: #1b1f1a;
-    --muted: #5a635a;
-    --border: #dfe3db;
+    --muted: #667066;
+    --border: #e1e5dd;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --brand: #4c9a5c;
+      --brand-dark: #6cbb7c;
+      --brand-light: #163420;
+      --bg: #141713;
+      --surface: #1b1f1a;
+      --text: #eef1ec;
+      --muted: #9aa398;
+      --border: #2c322a;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -21,121 +40,481 @@
     background: var(--bg);
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    min-height: 100vh;
   }
+  a { color: var(--brand); }
+
+  /* Header */
   header {
     background: linear-gradient(135deg, var(--brand), var(--brand-dark));
     color: white;
-    padding: 14px 20px;
+    padding: 20px 24px;
+  }
+  header .inner {
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
   }
-  header h1 {
-    font-size: 1.15rem;
-    margin: 0;
-    font-weight: 600;
-  }
-  header p {
-    margin: 2px 0 0;
+  header h1 { font-size: 1.4rem; margin: 0 0 4px; font-weight: 700; }
+  header .subtitle { font-size: 0.85rem; opacity: 0.92; margin: 0; }
+  header .stats {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 10px;
     font-size: 0.8rem;
-    opacity: 0.9;
   }
-  header a.newtab {
+  header .stats b { display: block; font-size: 1.05rem; }
+  header .links { display: flex; gap: 8px; flex-wrap: wrap; }
+  header .links a {
     color: white;
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.4);
     padding: 6px 12px;
     border-radius: 6px;
     text-decoration: none;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     white-space: nowrap;
   }
-  header a.newtab:hover { background: rgba(255,255,255,0.28); }
+  header .links a:hover { background: rgba(255,255,255,0.28); }
+
+  /* Toolbar */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+  }
+  .toolbar .inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  #search {
+    flex: 1 1 260px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.92rem;
+    background: var(--bg);
+    color: var(--text);
+  }
+  select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 180px;
+  }
+  #clearFilters {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  #clearFilters:hover { color: var(--text); border-color: var(--muted); }
+  #resultCount {
+    width: 100%;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Main */
   main {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 16px 24px 40px;
   }
-  #status {
-    padding: 10px 20px;
+  #loading {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  #loading .spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--brand);
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: auto;
+    box-shadow: var(--shadow);
+    display: none;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th {
+    position: sticky; top: 0;
+    background: var(--brand-light);
+    color: var(--text);
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--brand-light); }
+  td.taxon { font-style: italic; }
+  td.muted, .muted { color: var(--muted); }
+  .tag {
+    display: inline-block;
+    background: var(--brand-light);
+    color: var(--brand-dark);
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 0 4px;
     font-size: 0.85rem;
     color: var(--muted);
-    border-bottom: 1px solid var(--border);
-    background: white;
   }
-  iframe {
-    flex: 1;
-    border: none;
-    width: 100%;
-  }
-  footer {
-    padding: 8px 20px;
-    font-size: 0.75rem;
-    color: var(--muted);
-    background: white;
-    border-top: 1px solid var(--border);
-    text-align: center;
-  }
-  footer a { color: var(--brand-dark); }
-  .fallback {
-    padding: 24px;
-    max-width: 640px;
-    margin: 40px auto;
-    background: white;
+  .pagination button {
+    padding: 6px 12px;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .pagination button:disabled { opacity: 0.4; cursor: default; }
+  .pagination button:not(:disabled):hover { border-color: var(--brand); }
+
+  #empty {
     display: none;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  /* Detail modal */
+  .modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 20;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: 12px;
+    max-width: 640px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    padding: 24px;
+  }
+  .modal h2 { margin: 0 0 2px; font-size: 1.2rem; font-style: italic; }
+  .modal .local-name { color: var(--muted); margin: 0 0 16px; font-size: 0.9rem; }
+  .modal-close {
+    float: right;
+    border: none;
+    background: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 1;
+  }
+  .field-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 8px 14px;
+    font-size: 0.87rem;
+    margin-bottom: 16px;
+  }
+  .field-grid dt { color: var(--muted); }
+  .field-grid dd { margin: 0; }
+  .modal .citation {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  footer {
+    text-align: center;
+    padding: 16px 20px 28px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  footer a { color: var(--muted); text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .field-grid { grid-template-columns: 110px 1fr; }
+    thead th:nth-child(n+6), tbody td:nth-child(n+6) { display: none; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <h1>TEMDB — Türk Etnotıbbi Veritabanı</h1>
-    <p>5.071 kullanım kaydı · 1.002 bitki taksonu · 60 kaynak çalışma · 2017–2021</p>
+  <div class="inner">
+    <div>
+      <h1>TEMDB — Turkish Ethnomedicinal Database</h1>
+      <p class="subtitle">Standardized medicinal plant use-reports from ethnobotanical field studies in Türkiye</p>
+      <div class="stats">
+        <div><b>5,071</b> use-reports</div>
+        <div><b>1,002</b> plant taxa</div>
+        <div><b>107</b> families</div>
+        <div><b>60</b> source studies</div>
+        <div><b>2017–2021</b> coverage</div>
+      </div>
+    </div>
   </div>
-  <a class="newtab" id="open-new-tab" href="#" target="_blank" rel="noopener">Yeni sekmede aç ↗</a>
 </header>
 
+<div class="toolbar">
+  <div class="inner">
+    <input type="text" id="search" placeholder="Search plant name, local name, or ailment…" autocomplete="off">
+    <select id="f-family"><option value="">All families</option></select>
+    <select id="f-region"><option value="">All regions</option></select>
+    <select id="f-usetype"><option value="">All use types</option></select>
+    <select id="f-icd"><option value="">All disease categories</option></select>
+    <select id="f-year"><option value="">All years</option></select>
+    <button id="clearFilters">Clear filters</button>
+    <div id="resultCount"></div>
+  </div>
+</div>
+
 <main>
-  <div id="status">Veritabanı yükleniyor… (ilk açılışta birkaç saniye sürebilir)</div>
-  <iframe id="datasette-frame" title="TEMDB Datasette"></iframe>
+  <div id="loading">
+    <div class="spinner"></div>
+    Loading database…
+  </div>
+
+  <div class="table-wrap" id="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Plant</th>
+          <th>Family</th>
+          <th>Part used</th>
+          <th>Preparation → Route</th>
+          <th>Ailment</th>
+          <th>Region</th>
+          <th>Year</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="empty">No records match your search or filters.</div>
+
+  <div class="pagination" id="pagination" style="display:none;">
+    <button id="prevPage">← Prev</button>
+    <span id="pageInfo"></span>
+    <button id="nextPage">Next →</button>
+  </div>
 </main>
 
 <footer>
-  Bu arayüz <a href="https://lite.datasette.io/" target="_blank" rel="noopener">Datasette Lite</a> ile tarayıcı içinde (sunucu olmadan) çalışır.
-  Veri seti: TEMDB v1.0 · CC BY 4.0 · <a href="https://doi.org/10.5281/zenodo.20002971" target="_blank" rel="noopener">Zenodo DOI</a>
+  TEMDB v1.0 · CC BY 4.0 · 2017–2021
 </footer>
 
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.1/sql-wasm.js"></script>
 <script>
 (function () {
-  const statusEl = document.getElementById('status');
-  const frame = document.getElementById('datasette-frame');
-  const newTabLink = document.getElementById('open-new-tab');
+  const state = { rows: [], filtered: [], page: 1, pageSize: 50 };
+  const el = (id) => document.getElementById(id);
 
-  // GitHub Pages (and any local dev server) serves temdb.db with
-  // access-control-allow-origin: *, so Datasette Lite can fetch it directly
-  // from right next to this page, regardless of hostname or branch name.
-  const dbUrl = new URL('temdb.db', location.href).href;
+  function debounce(fn, ms) {
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  }
 
-  const datasetteUrl = 'https://lite.datasette.io/?url=' + encodeURIComponent(dbUrl) + '#/temdb/use_reports';
-  newTabLink.href = datasetteUrl;
-  frame.src = datasetteUrl;
+  function populateSelect(selectEl, values) {
+    values.forEach(v => {
+      if (!v) return;
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      selectEl.appendChild(opt);
+    });
+  }
 
-  frame.addEventListener('load', function () {
-    statusEl.textContent = 'Veritabanı hazır. Arama kutusunu veya sütun filtrelerini kullanarak kayıtları filtreleyebilirsiniz.';
+  function uniqueSorted(rows, key) {
+    return [...new Set(rows.map(r => r[key]).filter(Boolean))].sort();
+  }
+
+  function applyFilters() {
+    const q = el('search').value.trim().toLowerCase();
+    const family = el('f-family').value;
+    const region = el('f-region').value;
+    const useType = el('f-usetype').value;
+    const icd = el('f-icd').value;
+    const year = el('f-year').value;
+
+    state.filtered = state.rows.filter(r => {
+      if (family && r.family !== family) return false;
+      if (region && r.region !== region) return false;
+      if (useType && r.use_type !== useType) return false;
+      if (icd && r.icd11_level1 !== icd) return false;
+      if (year && String(r.study_year) !== year) return false;
+      if (q) {
+        const hay = (
+          (r.plant_name_original || '') + ' ' +
+          (r.local_name || '') + ' ' +
+          (r.accepted_taxon || '') + ' ' +
+          (r.disease_reported || '')
+        ).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    state.page = 1;
+    render();
+  }
+
+  function fmt(v) { return v === null || v === undefined || v === '' ? '—' : v; }
+
+  function renderRow(r) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="taxon">${fmt(r.accepted_taxon || r.plant_name_original)}</td>
+      <td>${fmt(r.family)}</td>
+      <td class="muted">${fmt(r.used_part)}</td>
+      <td class="muted">${fmt(r.preparation_method)} → ${fmt(r.administration_form)}</td>
+      <td>${fmt(r.disease_reported)}</td>
+      <td class="muted">${fmt(r.province || r.region)}</td>
+      <td class="muted">${fmt(r.study_year)}</td>
+    `;
+    tr.addEventListener('click', () => openDetail(r));
+    return tr;
+  }
+
+  function render() {
+    const tbody = el('tbody');
+    tbody.innerHTML = '';
+    const total = state.filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+    if (state.page > totalPages) state.page = totalPages;
+    const start = (state.page - 1) * state.pageSize;
+    const pageRows = state.filtered.slice(start, start + state.pageSize);
+
+    pageRows.forEach(r => tbody.appendChild(renderRow(r)));
+
+    el('resultCount').textContent = total.toLocaleString() + ' of ' + state.rows.length.toLocaleString() + ' use-reports';
+    el('tableWrap').style.display = total ? 'block' : 'none';
+    el('empty').style.display = total ? 'none' : 'block';
+    el('pagination').style.display = total > state.pageSize ? 'flex' : 'none';
+    el('pageInfo').textContent = 'Page ' + state.page + ' of ' + totalPages;
+    el('prevPage').disabled = state.page <= 1;
+    el('nextPage').disabled = state.page >= totalPages;
+  }
+
+  function openDetail(r) {
+    const modal = el('modal');
+    const citation = r.reference ? r.reference + (r.doi ? ' https://doi.org/' + r.doi : '') : 'Not available';
+    modal.innerHTML = `
+      <button class="modal-close" id="modalClose">&times;</button>
+      <h2>${fmt(r.accepted_taxon || r.plant_name_original)}</h2>
+      <p class="local-name">${fmt(r.local_name)} · ${fmt(r.family)} ${fmt(r.genus)}</p>
+      <dl class="field-grid">
+        <dt>Use type</dt><dd>${fmt(r.use_type)}</dd>
+        <dt>Part used</dt><dd>${fmt(r.used_part)}</dd>
+        <dt>Preparation</dt><dd>${fmt(r.preparation_method)}</dd>
+        <dt>Administration</dt><dd>${fmt(r.administration_form)}</dd>
+        <dt>Application</dt><dd>${fmt(r.application_method)}</dd>
+        <dt>Ailment (reported)</dt><dd>${fmt(r.disease_reported)}</dd>
+        <dt>ICD-11</dt><dd>${fmt(r.icd11_level1)} ${r.icd11_level2 ? '› ' + r.icd11_level2 : ''} ${r.icd11_level3 ? '› ' + r.icd11_level3 : ''}</dd>
+        <dt>Location</dt><dd>${[r.village, r.district, r.province, r.region].filter(Boolean).join(', ') || '—'}</dd>
+        <dt>Study year</dt><dd>${fmt(r.study_year)}</dd>
+        <dt>Record ID</dt><dd>${fmt(r.record_id)}</dd>
+      </dl>
+      <div class="citation">${citation}</div>
+    `;
+    el('modalBackdrop').style.display = 'flex';
+    el('modalClose').addEventListener('click', closeDetail);
+  }
+
+  function closeDetail() { el('modalBackdrop').style.display = 'none'; }
+  el('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeDetail(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDetail(); });
+
+  el('search').addEventListener('input', debounce(applyFilters, 150));
+  ['f-family', 'f-region', 'f-usetype', 'f-icd', 'f-year'].forEach(id => {
+    el(id).addEventListener('change', applyFilters);
   });
+  el('clearFilters').addEventListener('click', () => {
+    el('search').value = '';
+    ['f-family', 'f-region', 'f-usetype', 'f-icd', 'f-year'].forEach(id => el(id).value = '');
+    applyFilters();
+  });
+  el('prevPage').addEventListener('click', () => { state.page--; render(); window.scrollTo({top: 0, behavior: 'smooth'}); });
+  el('nextPage').addEventListener('click', () => { state.page++; render(); window.scrollTo({top: 0, behavior: 'smooth'}); });
 
-  setTimeout(function () {
-    if (statusEl.textContent.indexOf('yükleniyor') !== -1) {
-      statusEl.innerHTML = 'Yükleme uzun sürüyorsa <a href="' + datasetteUrl + '" target="_blank" rel="noopener">buraya tıklayıp yeni sekmede açabilirsiniz</a>.';
-    }
-  }, 6000);
+  // ---- Load DB ----
+  initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.1/${file}` })
+    .then(SQL => fetch('temdb.db').then(r => r.arrayBuffer()).then(buf => {
+      const db = new SQL.Database(new Uint8Array(buf));
+      const res = db.exec('SELECT * FROM use_reports');
+      const cols = res[0].columns;
+      state.rows = res[0].values.map(row => {
+        const obj = {};
+        cols.forEach((c, i) => obj[c] = row[i]);
+        return obj;
+      });
+      db.close();
+
+      populateSelect(el('f-family'), uniqueSorted(state.rows, 'family'));
+      populateSelect(el('f-region'), uniqueSorted(state.rows, 'region'));
+      populateSelect(el('f-usetype'), uniqueSorted(state.rows, 'use_type'));
+      populateSelect(el('f-icd'), uniqueSorted(state.rows, 'icd11_level1'));
+      populateSelect(el('f-year'), uniqueSorted(state.rows, 'study_year').map(String));
+
+      el('loading').style.display = 'none';
+      applyFilters();
+    }))
+    .catch(err => {
+      el('loading').textContent = 'Failed to load database. Please try refreshing the page.';
+      console.error(err);
+    });
 })();
 </script>
 
