@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TEMDB — Turkish Ethnomedicinal Database</title>
-<meta name="description" content="Browse 5,071 medicinal plant use-reports from 60 ethnobotanical studies conducted in Türkiye (2017–2021).">
+<meta name="description" content="Search 5,049 medicinal plant use-reports from 60 ethnobotanical studies conducted in Türkiye (2017–2021).">
 <style>
   :root {
     --brand: #1f4f42;
@@ -208,12 +208,13 @@
   .pagination button:disabled { opacity: 0.4; cursor: default; }
   .pagination button:not(:disabled):hover { border-color: var(--brand); }
 
-  #empty {
+  #empty, #prompt {
     display: none;
     text-align: center;
     padding: 60px 20px;
     color: var(--muted);
   }
+  #prompt { font-size: 0.95rem; max-width: 420px; margin: 0 auto; }
 
   /* Detail modal */
   .modal-backdrop {
@@ -285,9 +286,9 @@
       <h1>TEMDB — Turkish Ethnomedicinal Database</h1>
       <p class="subtitle">Standardized medicinal plant use-reports from ethnobotanical field studies in Türkiye</p>
       <div class="stats">
-        <div><b>5,071</b> use-reports</div>
+        <div><b>5,049</b> use-reports</div>
         <div><b>1,002</b> plant taxa</div>
-        <div><b>107</b> families</div>
+        <div><b>104</b> families</div>
         <div><b>60</b> source studies</div>
         <div><b>2017–2021</b> coverage</div>
       </div>
@@ -297,8 +298,9 @@
 
 <div class="toolbar">
   <div class="inner">
-    <input type="text" id="search" placeholder="Search plant name, local name, or ailment…" autocomplete="off">
+    <input type="text" id="search" placeholder="Search by plant name (scientific or local)…" autocomplete="off">
     <select id="f-family"><option value="">All families</option></select>
+    <select id="f-genus"><option value="">All genera</option></select>
     <select id="f-region"><option value="">All regions</option></select>
     <select id="f-usetype"><option value="">All use types</option></select>
     <select id="f-icd"><option value="">All disease categories</option></select>
@@ -331,6 +333,7 @@
     </table>
   </div>
 
+  <div id="prompt">Search by plant name above, or filter by genus, family, or ICD-11 category to see matching use-reports.</div>
   <div id="empty">No records match your search or filters.</div>
 
   <div class="pagination" id="pagination" style="display:none;">
@@ -389,9 +392,29 @@
     return [...set].sort();
   }
 
+  function hasActiveQuery() {
+    return !!(
+      el('search').value.trim() ||
+      el('f-family').value ||
+      el('f-genus').value ||
+      el('f-region').value ||
+      el('f-usetype').value ||
+      el('f-icd').value ||
+      el('f-year').value
+    );
+  }
+
   function applyFilters() {
+    if (!hasActiveQuery()) {
+      state.filtered = [];
+      state.page = 1;
+      render({ prompt: true });
+      return;
+    }
+
     const q = el('search').value.trim().toLowerCase();
     const family = el('f-family').value;
+    const genus = el('f-genus').value;
     const region = el('f-region').value;
     const useType = el('f-usetype').value;
     const icd = el('f-icd').value;
@@ -399,16 +422,17 @@
 
     state.filtered = state.rows.filter(r => {
       if (family && r.family !== family) return false;
+      if (genus && r.genus !== genus) return false;
       if (region && r.region !== region) return false;
       if (useType && r.use_type !== useType) return false;
       if (icd && !splitIcdChapters(r.icd11_level1).includes(icd)) return false;
       if (year && String(r.study_year) !== year) return false;
       if (q) {
         const hay = (
-          (r.plant_name_original || '') + ' ' +
+          (r.reported_plant_name || '') + ' ' +
           (r.local_name || '') + ' ' +
           (r.accepted_taxon || '') + ' ' +
-          (r.disease_reported || '')
+          (r.accepted_species || '')
         ).toLowerCase();
         if (!hay.includes(q)) return false;
       }
@@ -423,7 +447,7 @@
   function renderRow(r) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="taxon">${fmt(r.accepted_taxon || r.plant_name_original)}</td>
+      <td class="taxon">${fmt(r.accepted_taxon || r.reported_plant_name)}</td>
       <td>${fmt(r.family)}</td>
       <td class="muted">${fmt(r.used_part)}</td>
       <td class="muted">${fmt(r.preparation_method)} → ${fmt(r.administration_form)}</td>
@@ -435,7 +459,8 @@
     return tr;
   }
 
-  function render() {
+  function render(opts) {
+    const isPrompt = !!(opts && opts.prompt);
     const tbody = el('tbody');
     tbody.innerHTML = '';
     const total = state.filtered.length;
@@ -446,10 +471,13 @@
 
     pageRows.forEach(r => tbody.appendChild(renderRow(r)));
 
-    el('resultCount').textContent = total.toLocaleString() + ' of ' + state.rows.length.toLocaleString() + ' use-reports';
-    el('tableWrap').style.display = total ? 'block' : 'none';
-    el('empty').style.display = total ? 'none' : 'block';
-    el('pagination').style.display = total > state.pageSize ? 'flex' : 'none';
+    el('resultCount').textContent = isPrompt
+      ? ''
+      : total.toLocaleString() + ' of ' + state.rows.length.toLocaleString() + ' use-reports';
+    el('prompt').style.display = isPrompt ? 'block' : 'none';
+    el('tableWrap').style.display = (!isPrompt && total) ? 'block' : 'none';
+    el('empty').style.display = (!isPrompt && !total) ? 'block' : 'none';
+    el('pagination').style.display = (!isPrompt && total > state.pageSize) ? 'flex' : 'none';
     el('pageInfo').textContent = 'Page ' + state.page + ' of ' + totalPages;
     el('prevPage').disabled = state.page <= 1;
     el('nextPage').disabled = state.page >= totalPages;
@@ -457,15 +485,16 @@
 
   function openDetail(r) {
     const modal = el('modal');
-    const citation = r.reference ? r.reference + (r.doi ? ' https://doi.org/' + r.doi : '') : 'Not available';
+    const doiUrl = r.doi ? (/^https?:\/\//i.test(r.doi) ? r.doi : 'https://doi.org/' + r.doi) : '';
+    const citation = r.reference ? r.reference + (doiUrl ? ' ' + doiUrl : '') : 'Not available';
     modal.innerHTML = `
       <button class="modal-close" id="modalClose">&times;</button>
-      <h2>${fmt(r.accepted_taxon || r.accepted_species || r.plant_name_original)}</h2>
+      <h2>${fmt(r.accepted_taxon || r.accepted_species || r.reported_plant_name)}</h2>
       <p class="local-name">${fmt(r.local_name)} · ${fmt(r.family)} ${fmt(r.genus)}</p>
       <dl class="field-grid">
         <dt>Accepted name</dt><dd>${fmt(r.accepted_species)}</dd>
         <dt>Accepted taxon</dt><dd>${fmt(r.accepted_taxon)}</dd>
-        <dt>Reported as</dt><dd>${fmt(r.plant_name_original)}</dd>
+        <dt>Reported as</dt><dd>${fmt(r.reported_plant_name)}</dd>
         <dt>Local name</dt><dd>${fmt(r.local_name)}</dd>
         <dt>Family</dt><dd>${fmt(r.family)}</dd>
         <dt>Genus</dt><dd>${fmt(r.genus)}</dd>
@@ -491,13 +520,15 @@
   el('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeDetail(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDetail(); });
 
+  const FILTER_IDS = ['f-family', 'f-genus', 'f-region', 'f-usetype', 'f-icd', 'f-year'];
+
   el('search').addEventListener('input', debounce(applyFilters, 150));
-  ['f-family', 'f-region', 'f-usetype', 'f-icd', 'f-year'].forEach(id => {
+  FILTER_IDS.forEach(id => {
     el(id).addEventListener('change', applyFilters);
   });
   el('clearFilters').addEventListener('click', () => {
     el('search').value = '';
-    ['f-family', 'f-region', 'f-usetype', 'f-icd', 'f-year'].forEach(id => el(id).value = '');
+    FILTER_IDS.forEach(id => el(id).value = '');
     applyFilters();
   });
   el('prevPage').addEventListener('click', () => { state.page--; render(); window.scrollTo({top: 0, behavior: 'smooth'}); });
@@ -517,6 +548,7 @@
       db.close();
 
       populateSelect(el('f-family'), uniqueSorted(state.rows, 'family'));
+      populateSelect(el('f-genus'), uniqueSorted(state.rows, 'genus'));
       populateSelect(el('f-region'), uniqueSorted(state.rows, 'region'));
       populateSelect(el('f-usetype'), uniqueSorted(state.rows, 'use_type'));
       populateSelect(el('f-icd'), uniqueIcdChapters(state.rows));
