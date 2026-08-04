@@ -68,12 +68,18 @@
     width: 96px;
     height: 96px;
     background: #ffffff;
+    border: none;
     border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow);
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.12s ease;
   }
+  .logo-badge:hover { transform: scale(1.04); }
+  .logo-badge:active { transform: scale(0.97); }
   .logo-badge img { width: 70%; height: 70%; display: block; object-fit: contain; }
   header h1 { font-size: 1.4rem; margin: 0 0 4px; font-weight: 700; }
   header .subtitle { font-size: 0.85rem; opacity: 0.92; margin: 0; }
@@ -300,7 +306,7 @@
 <header>
   <div class="inner">
     <div class="brand">
-      <div class="logo-badge"><img src="Database_Logo.svg" alt="TEMDB logo"></div>
+      <button type="button" class="logo-badge" id="logoHome" aria-label="Go to home"><img src="Database_Logo.svg" alt="TEMDB logo"></button>
       <div>
         <h1>TEMDB — Turkish Ethnomedicinal Database</h1>
         <p class="subtitle">Standardized medicinal plant use-reports from ethnobotanical field studies in Türkiye</p>
@@ -467,7 +473,7 @@
   function renderRow(r) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="taxon">${fmt(r.accepted_taxon || r.reported_plant_name)}</td>
+      <td class="taxon">${fmt(r.accepted_species || r.accepted_taxon || r.reported_plant_name)}</td>
       <td>${fmt(r.family)}</td>
       <td class="muted">${fmt(r.used_part)}</td>
       <td class="muted">${fmt(r.preparation_method)} → ${fmt(r.administration_form)}</td>
@@ -550,6 +556,13 @@
     el('search').value = '';
     FILTER_IDS.forEach(id => el(id).value = '');
     applyFilters();
+  });
+  el('logoHome').addEventListener('click', () => {
+    closeDetail();
+    el('search').value = '';
+    FILTER_IDS.forEach(id => el(id).value = '');
+    applyFilters();
+    window.scrollTo({top: 0, behavior: 'smooth'});
   });
   el('prevPage').addEventListener('click', () => { state.page--; render(); window.scrollTo({top: 0, behavior: 'smooth'}); });
   el('nextPage').addEventListener('click', () => { state.page++; render(); window.scrollTo({top: 0, behavior: 'smooth'}); });
