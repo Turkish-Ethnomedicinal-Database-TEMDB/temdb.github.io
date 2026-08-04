@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TEMDB — Turkish Ethnomedicinal Database</title>
 <meta name="description" content="Search 5,049 medicinal plant use-reports from 60 ethnobotanical studies conducted in Türkiye (2017–2021).">
+<link rel="icon" type="image/svg+xml" href="Database_Logo.svg">
 <style>
   :root {
-    --brand: #1f4f42;
-    --brand-dark: #12332b;
-    --brand-light: #e4ece8;
+    --brand: #537877;
+    --brand-dark: #364e4d;
+    --brand-light: #dde1df;
+    --accent: #9fb9ab;
     --bg: #f7f8f6;
     --surface: #ffffff;
     --text: #1a201c;
@@ -20,9 +22,10 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --brand: #3f9481;
-      --brand-dark: #5fc0a4;
-      --brand-light: #102420;
+      --brand: #90ae9e;
+      --brand-dark: #bccfc5;
+      --brand-light: #101817;
+      --accent: #9fb9ab;
       --bg: #0f1512;
       --surface: #171d19;
       --text: #e9ede9;
@@ -59,6 +62,18 @@
     flex-wrap: wrap;
     gap: 12px;
   }
+  header .brand { display: flex; align-items: stretch; gap: 16px; }
+  .logo-badge {
+    flex: none;
+    width: 96px;
+    background: #ffffff;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+  }
+  .logo-badge img { width: 70%; height: 70%; display: block; object-fit: contain; }
   header h1 { font-size: 1.4rem; margin: 0 0 4px; font-weight: 700; }
   header .subtitle { font-size: 0.85rem; opacity: 0.92; margin: 0; }
   header .stats {
@@ -282,15 +297,18 @@
 
 <header>
   <div class="inner">
-    <div>
-      <h1>TEMDB — Turkish Ethnomedicinal Database</h1>
-      <p class="subtitle">Standardized medicinal plant use-reports from ethnobotanical field studies in Türkiye</p>
-      <div class="stats">
-        <div><b>5,049</b> use-reports</div>
-        <div><b>1,002</b> plant taxa</div>
-        <div><b>104</b> families</div>
-        <div><b>60</b> source studies</div>
-        <div><b>2017–2021</b> coverage</div>
+    <div class="brand">
+      <div class="logo-badge"><img src="Database_Logo.svg" alt="TEMDB logo"></div>
+      <div>
+        <h1>TEMDB — Turkish Ethnomedicinal Database</h1>
+        <p class="subtitle">Standardized medicinal plant use-reports from ethnobotanical field studies in Türkiye</p>
+        <div class="stats">
+          <div><b>5,049</b> use-reports</div>
+          <div><b>1,002</b> plant taxa</div>
+          <div><b>104</b> families</div>
+          <div><b>60</b> source studies</div>
+          <div><b>2017–2021</b> coverage</div>
+        </div>
       </div>
     </div>
   </div>
