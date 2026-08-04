@@ -62,10 +62,11 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  header .brand { display: flex; align-items: stretch; gap: 16px; }
+  header .brand { display: flex; align-items: flex-start; gap: 16px; }
   .logo-badge {
     flex: none;
     width: 96px;
+    height: 96px;
     background: #ffffff;
     border-radius: 14px;
     display: flex;
@@ -288,6 +289,7 @@
   footer a { color: var(--muted); text-decoration: underline; }
 
   @media (max-width: 640px) {
+    .logo-badge { width: 56px; height: 56px; border-radius: 10px; }
     .field-grid { grid-template-columns: 110px 1fr; }
     thead th:nth-child(n+6), tbody td:nth-child(n+6) { display: none; }
   }
